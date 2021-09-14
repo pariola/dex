@@ -9,6 +9,9 @@ type Node struct {
 	// indexes where the term exists in the document
 	indexes []int
 
+	// term frequency
+	tf float64
+
 	// next points to the next node
 	next *Node
 }

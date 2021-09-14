@@ -1,7 +1,6 @@
 package main
 
 import (
-	"math"
 	"strings"
 
 	"dex/pkg/tokenizer"
@@ -11,7 +10,7 @@ import (
 type Index struct {
 
 	// number of documents in the index
-	N int
+	N int32
 
 	// dictionary
 	d map[string]*PostingList
@@ -24,11 +23,6 @@ func NewIndex() *Index {
 	}
 }
 
-// tfIDF calculates the term inverse document frequency
-func (i Index) tfIDF(df int32) float64 {
-	return math.Log(float64(i.N) / float64(df))
-}
-
 // Add prepare a document for the index
 func (i *Index) Add(d Document) {
 
@@ -38,12 +32,20 @@ func (i *Index) Add(d Document) {
 		strings.NewReader(d.Content),
 	)
 
-	for term, indexes := range t.Scan() {
+	// extract terms
+	terms := t.Scan()
+
+	// total terms count
+	ttc := len(terms)
+
+	for term, indexes := range terms {
 
 		n := &Node{
 			doc:     d.Id,
 			indexes: indexes,
 		}
+
+		n.tf = tf(len(indexes), ttc)
 
 		if _, ok := i.d[term]; !ok {
 			i.d[term] = new(PostingList)
@@ -53,7 +55,7 @@ func (i *Index) Add(d Document) {
 		p.Insert(n)
 
 		// update idf
-		p.idf = i.tfIDF(p.Size())
+		p.idf = idf(i.N, p.Size())
 	}
 }
 
